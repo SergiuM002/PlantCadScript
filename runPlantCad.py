@@ -54,10 +54,13 @@ warnings.simplefilter('ignore', BiopythonDeprecationWarning)
 save_to_file = False
 filepath = ''
 unknown_args = len(sys.argv) - 2
+
+helptext = ''
+
+with open('README', 'r') as file:
+        helptext = str(file.read()).split('////')[1]
         
 if '-h' in sys.argv or '--help' in sys.argv:
-    with open('README', 'r') as file:
-        helptext = file.read()
     print(helptext)
     sys.exit(0)
     
@@ -66,8 +69,6 @@ if '-f' in sys.argv or '--file' in sys.argv:
     save_to_file = True
     
 if unknown_args != 0:
-    with open('README', 'r') as file:
-        helptext = file.read()
     print(helptext)
     sys.exit(1)
     
