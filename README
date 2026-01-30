@@ -1,7 +1,5 @@
 To use this script, you will need to run the following commands to install the dependencies in your conda environment:
 
-conda create -n ENVNAME python=3.10
-
 conda install nvidia::cuda-nvcc -y
 
 conda install nvidia::cuda-toolkit -y
