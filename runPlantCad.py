@@ -87,7 +87,6 @@ gpn_pipeline = pipeline("gpn", model=model, tokenizer=tokenizer, trust_remote_co
 
 # Example plant DNA sequence (512bp max)
 sequence = str(SeqIO.read(filepath, "fasta").seq)
-device = 'cuda:0'
 # Get embeddings
 encoding = tokenizer.encode_plus(
             sequence,
@@ -128,14 +127,18 @@ if save_to_file:
     sem_plot = df.reset_index().plot.scatter(
         x='index',
         y='SEM',
+        s=20/(len(df)/1000),
         c='SEM',
         cmap='PiYG',
-        norm=mcolors.TwoSlopeNorm(vmin=-0.5, vcenter=0, vmax=1.5)
+        norm=mcolors.TwoSlopeNorm(vmin=-0.5, vcenter=0, vmax=1.5),
+        colorbar=False
     )
     
     sb_plot = df.reset_index().plot.scatter(
         x='index',
         y='SB',
+        s=20/(len(df)/1000),
+        colorbar=False
     )
     
     sem_plot.get_figure().savefig("results/" + filename + "/SEM_plot.png", dpi=150)
