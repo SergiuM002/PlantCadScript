@@ -1,6 +1,7 @@
 import sys
 import warnings
 import os
+import math
 import gpn.model
 import gpn.pipelines
 import torch
@@ -8,17 +9,6 @@ import pandas as pd
 from transformers import pipeline, AutoTokenizer, AutoModelForMaskedLM
 from mamba_ssm import Mamba
 from Bio import SeqIO, BiopythonDeprecationWarning
-
-pd.set_option('display.max_rows', None)
-pd.set_option('display.max_columns', None)
-pd.set_option('display.width', None)
-pd.set_option('display.max_colwidth', None)
-
-warnings.simplefilter('ignore', BiopythonDeprecationWarning)
-
-save_to_file = False
-filepath = ''
-unknown_args = len(sys.argv) - 2
 
 def is_fasta(filepath):
     try:
@@ -33,6 +23,34 @@ def is_fasta(filepath):
     except ValueError:
         print('File ' + filepath + ' is in the wrong format.\n')
         sys.exit(3)
+        
+def sem(probs, probref):
+    _sum = 2
+    
+    for i in range(4):
+        _sum += probs[i] * math.log2(probs[i])
+    
+    return _sum * (probref - 0.25)
+
+def sb(probs, probref):
+    _sum = 0
+    
+    for i in range(4):
+        _sum += probs[i] * math.log2(probs[i]) 
+        
+    return -sum + math.log2(probref)
+    
+
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_columns', None)
+pd.set_option('display.width', None)
+pd.set_option('display.max_colwidth', None)
+
+warnings.simplefilter('ignore', BiopythonDeprecationWarning)
+
+save_to_file = False
+filepath = ''
+unknown_args = len(sys.argv) - 2
         
 if '-h' in sys.argv or '--help' in sys.argv:
     with open('README', 'r') as file:
@@ -82,9 +100,22 @@ embeddings = outputs.hidden_states[-1]
 print(f"Embedding shape: {embeddings.shape}")  # [batch_size, seq_len, embedding_dim]
 
 df = gpn_pipeline(sequence, batch_size=8)[0]
-print(df)
 
-if (save_to_file):
+if save_to_file:
     os.makedirs("results", exist_ok=True)
     filename = filepath.split('/')[-1].split('.')[0] + "_model_probabilities.csv"
     df.to_csv("results/"+filename, index=False)
+    
+sem_scores = []
+sb_scores = []
+
+for i in range(len(df)):
+    row = df.iloc[i].tolist()
+    
+    sem_scores.append(sem(row[2:6], row[1]))
+    sb_scores.append(sb(row[2:6], row[1]))
+    
+df["SEM"] = sem_scores
+df["SB"] = sb_scores
+
+print(df)
