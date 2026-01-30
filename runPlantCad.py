@@ -6,6 +6,8 @@ import gpn.model
 import gpn.pipelines
 import torch
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 from transformers import pipeline, AutoTokenizer, AutoModelForMaskedLM
 from mamba_ssm import Mamba
 from Bio import SeqIO, BiopythonDeprecationWarning
@@ -38,7 +40,7 @@ def sb(probs, probref):
     for i in range(4):
         _sum += probs[i] * math.log2(probs[i]) 
         
-    return -sum + math.log2(probref)
+    return -_sum + math.log2(probref)
     
 
 pd.set_option('display.max_rows', None)
@@ -46,6 +48,7 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)
 pd.set_option('display.max_colwidth', None)
 
+warnings.simplefilter('ignore', FutureWarning)
 warnings.simplefilter('ignore', BiopythonDeprecationWarning)
 
 save_to_file = False
@@ -100,11 +103,6 @@ embeddings = outputs.hidden_states[-1]
 print(f"Embedding shape: {embeddings.shape}")  # [batch_size, seq_len, embedding_dim]
 
 df = gpn_pipeline(sequence, batch_size=8)[0]
-
-if save_to_file:
-    os.makedirs("results", exist_ok=True)
-    filename = filepath.split('/')[-1].split('.')[0] + "_model_probabilities.csv"
-    df.to_csv("results/"+filename, index=False)
     
 sem_scores = []
 sb_scores = []
@@ -119,3 +117,25 @@ df["SEM"] = sem_scores
 df["SB"] = sb_scores
 
 print(df)
+
+if save_to_file:
+    os.makedirs("results", exist_ok=True)
+    filename = filepath.split('/')[-1].split('.')[0]
+    os.makedirs("results/" + filename, exist_ok=True)
+    df.to_csv("results/" + filename + "/model_probabilities.csv", index=False)
+    
+    sem_plot = df.reset_index().plot.scatter(
+        x='index',
+        y='SEM',
+        c='SEM',
+        cmap='PiYG',
+        norm=mcolors.TwoSlopeNorm(vmin=-0.5, vcenter=0, vmax=1.5)
+    )
+    
+    sb_plot = df.reset_index().plot.scatter(
+        x='index',
+        y='SB',
+    )
+    
+    sem_plot.get_figure().savefig("results/" + filename + "/SEM_plot.png", dpi=150)
+    sb_plot.get_figure().savefig("results/" + filename + "/SB_plot.png", dpi=150)
