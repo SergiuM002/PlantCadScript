@@ -1,0 +1,5 @@
+usage: python runPlantCad.py [-h] [-s] FASTAFILE.fa
+
+options:
+    -h, --help      Show this help message and exit.
+    -f, --file      Save output to file.
