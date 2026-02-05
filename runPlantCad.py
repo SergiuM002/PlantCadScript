@@ -85,22 +85,7 @@ model.to(device)
 
 gpn_pipeline = pipeline("gpn", model=model, tokenizer=tokenizer, trust_remote_code=True, device='cuda:0')
 
-# Example plant DNA sequence (512bp max)
 sequence = str(SeqIO.read(filepath, "fasta").seq)
-# Get embeddings
-encoding = tokenizer.encode_plus(
-            sequence,
-            return_tensors="pt",
-            return_attention_mask=False,
-            return_token_type_ids=False
-        )
-
-input_ids = encoding["input_ids"].to(device)
-with torch.inference_mode():
-    outputs = model(input_ids=input_ids, output_hidden_states=True)
-
-embeddings = outputs.hidden_states[-1]
-print(f"Embedding shape: {embeddings.shape}")  # [batch_size, seq_len, embedding_dim]
 
 df = gpn_pipeline(sequence, batch_size=8)[0]
     
