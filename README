@@ -11,7 +11,7 @@ pip3 install mamba-ssm==2.2.2 transformers==4.40.0 git+https://github.com/dridk/
 pip install --quiet git+https://github.com/SilvanCodes/gpn.git
 
 ////
-usage: python runPlantCad.py [-h] [-s] FASTAFILE.fa
+usage: python runPlantCad.py [-h] [-f] FASTAFILE.fa
 
 options:
     -h, --help      Show this help message and exit.

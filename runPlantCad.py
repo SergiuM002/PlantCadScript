@@ -26,21 +26,13 @@ def is_fasta(filepath):
         print('File ' + filepath + ' is in the wrong format.\n')
         sys.exit(3)
         
-def sem(probs, probref):
-    _sum = 2
+def msic(probs, probref):
+    _sum = 1
     
     for i in range(4):
-        _sum += probs[i] * math.log2(probs[i])
+        _sum -= probs[i] * math.log(probs[i], 4)
     
-    return _sum * (probref - 0.25)
-
-def sb(probs, probref):
-    _sum = 0
-    
-    for i in range(4):
-        _sum += probs[i] * math.log2(probs[i]) 
-        
-    return -_sum + math.log2(probref)
+    return (1 - 2*((math.max(probs)-probref) / math.max(probs))) * _sum
     
 
 pd.set_option('display.max_rows', None)
@@ -89,17 +81,15 @@ sequence = str(SeqIO.read(filepath, "fasta").seq)
 
 df = gpn_pipeline(sequence, batch_size=8)[0]
     
-sem_scores = []
-sb_scores = []
+msic_scores = []
 
 for i in range(len(df)):
     row = df.iloc[i].tolist()
     
-    sem_scores.append(sem(row[2:6], row[1]))
-    sb_scores.append(sb(row[2:6], row[1]))
+    msic_scores.append(msic(row[2:6], row[1]))
     
-df["SEM"] = sem_scores
-df["SB"] = sb_scores
+df["MSIC"] = msic_scores
+
 
 print(df)
 
@@ -109,22 +99,14 @@ if save_to_file:
     os.makedirs("results/" + filename, exist_ok=True)
     df.to_csv("results/" + filename + "/model_probabilities.csv", index=False)
     
-    sem_plot = df.reset_index().plot.scatter(
+    msic_plot = df.reset_index().plot.scatter(
         x='index',
-        y='SEM',
+        y='MSIC',
         s=20/(len(df)/1000),
-        c='SEM',
+        c='MSIC',
         cmap='PiYG',
         norm=mcolors.TwoSlopeNorm(vmin=-0.5, vcenter=0, vmax=1.5),
         colorbar=False
     )
     
-    sb_plot = df.reset_index().plot.scatter(
-        x='index',
-        y='SB',
-        s=20/(len(df)/1000),
-        colorbar=False
-    )
-    
-    sem_plot.get_figure().savefig("results/" + filename + "/SEM_plot.png", dpi=150)
-    sb_plot.get_figure().savefig("results/" + filename + "/SB_plot.png", dpi=150)
+    msic_plot.get_figure().savefig("results/" + filename + "/MSIC_plot.png", dpi=150)
