@@ -5,6 +5,7 @@ import math
 import gpn.model
 import gpn.pipelines
 import torch
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -30,9 +31,9 @@ def msic(probs, probref):
     _sum = 1
     
     for i in range(4):
-        _sum -= probs[i] * math.log(probs[i], 4)
+        _sum += probs[i] * math.log(probs[i], 4)
     
-    return (1 - 2*((math.max(probs)-probref) / math.max(probs))) * _sum
+    return (1 - 2*((max(probs)-probref) / max(probs))) * _sum
     
 
 pd.set_option('display.max_rows', None)
@@ -80,6 +81,7 @@ gpn_pipeline = pipeline("gpn", model=model, tokenizer=tokenizer, trust_remote_co
 sequence = str(SeqIO.read(filepath, "fasta").seq)
 
 df = gpn_pipeline(sequence, batch_size=8)[0]
+df = df.drop(columns=["gpn_a", "gpn_c", "gpn_g", "gpn_t"])
     
 msic_scores = []
 
@@ -99,14 +101,21 @@ if save_to_file:
     os.makedirs("results/" + filename, exist_ok=True)
     df.to_csv("results/" + filename + "/model_probabilities.csv", index=False)
     
+    colors = []
+    
+    for value in df["MSIC"].tolist():
+        if value >= 0.75:
+            colors.append("green")
+        elif value <= -0.6:
+            colors.append("red")
+        else:
+            colors.append("gainsboro")
+    
     msic_plot = df.reset_index().plot.scatter(
         x='index',
         y='MSIC',
         s=20/(len(df)/1000),
-        c='MSIC',
-        cmap='PiYG',
-        norm=mcolors.TwoSlopeNorm(vmin=-0.5, vcenter=0, vmax=1.5),
-        colorbar=False
+        c=colors
     )
     
     msic_plot.get_figure().savefig("results/" + filename + "/MSIC_plot.png", dpi=150)
